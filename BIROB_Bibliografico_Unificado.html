@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema Bibliográfico BIROB — CENFOTEC</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<!-- mammoth.js for DOCX-to-text conversion in browser -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+:root {
+  --navy:    #164a98;
+  --blue:    #006aea;
+  --bg:      #f0f4ff;
+  --surface: #ffffff;
+  --border:  #d0ddf5;
+  --text:    #0d1b3e;
+  --muted:   #6b7ea8;
+  --green:   #0c8a4e;
+  --green-bg:#e6f7ef;
+  --orange:  #c45f00;
+  --orange-bg:#fff3e6;
+  --red:     #cc2200;
+  --accent2: #8b4513;
+  --tag-oblig:#1a3a5c;
+  --tag-compl:#6b5a3e;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Sora', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── SIDEBAR NAV ── */
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--navy);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.sidebar-brand {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+
+.sidebar-brand .logo-box {
+  width: 36px;
+  height: 36px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.sidebar-brand h1 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+}
+
+.sidebar-brand p {
+  font-size: 0.68rem;
+  opacity: 0.55;
+  margin-top: 3px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.4;
+  padding: 12px 8px 4px;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.65);
+  font-family: 'Sora', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+  width: 100%;
+}
+
+.nav-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
+
+.nav-btn.active {
+  background: rgba(255,255,255,0.18);
+  color: white;
+  font-weight: 600;
+}
+
+.nav-btn .nav-icon {
+  font-size: 1rem;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.nav-btn .nav-badge {
+  margin-left: auto;
+  background: rgba(255,255,255,0.2);
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.nav-btn.ready .nav-badge {
+  background: #0c8a4e;
+  color: white;
+}
+
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  font-size: 0.68rem;
+  opacity: 0.35;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* ── MAIN CONTENT ── */
+.main {
+  flex: 1;
+  padding: 32px 36px 60px;
+  min-width: 0;
+}
+
+/* ── PANELS ── */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── PAGE HEADER ── */
+.page-header {
+  margin-bottom: 28px;
+}
+
+.page-header h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1.2;
+}
+
+.page-header p {
+  font-size: 0.83rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ── PIPELINE STATUS (Module 0) ── */
+.pipeline {
+  display: flex;
+  gap: 0;
+  margin-bottom: 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pipe-step {
+  flex: 1;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-right: 1px solid var(--border);
+}
+
+.pipe-step:last-child { border-right: none; }
+
+.pipe-step .ps-num {
+  font-size: 0.62rem;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.pipe-step .ps-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.pipe-step .ps-status {
+  font-size: 0.72rem;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.pipe-step.done .ps-label { color: var(--green); }
+.pipe-step.done .ps-status { color: var(--green); }
+.pipe-step.active .ps-label { color: var(--blue); }
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px 28px;
+  margin-bottom: 20px;
+}
+
+.card-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+/* ── UPLOAD ZONES ── */
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 28px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  position: relative;
+}
+
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--blue);
+  background: #f0f6ff;
+}
+
+.upload-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.upload-zone .u-icon { font-size: 2rem; margin-bottom: 8px; display: block; }
+.upload-zone .u-label { font-size: 0.92rem; font-weight: 600; color: var(--navy); }
+.upload-zone .u-sub { font-size: 0.75rem; color: var(--muted); margin-top: 3px; }
+
+.file-list {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.file-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+}
+
+.file-chip.converted {
+  border-color: #a8dfc4;
+  background: var(--green-bg);
+}
+
+.file-chip.error-chip {
+  border-color: #f5bfb8;
+  background: #fff0ee;
+}
+
+.file-chip .fc-name {
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--navy);
+  flex: 1;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.file-chip.converted .fc-name { color: var(--green); }
+.file-chip.error-chip .fc-name { color: var(--red); }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+
+.btn-primary { background: var(--navy); color: white; }
+.btn-primary:hover { background: #1a5ab8; }
+.btn-primary:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+
+.btn-green { background: var(--green-bg); color: var(--green); border: 1px solid #a8dfc4; }
+.btn-green:hover { background: #d0f0e4; }
+.btn-green:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-outline { background: transparent; color: var(--navy); border: 1.5px solid var(--border); }
+.btn-outline:hover { border-color: var(--blue); color: var(--blue); }
+
+.actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 18px; }
+
+/* ── STATUS ── */
+.status {
+  display: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.83rem;
+  font-weight: 600;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.status.visible { display: flex; }
+.status.success { background: var(--green-bg); color: var(--green); border: 1px solid #a8dfc4; }
+.status.error   { background: #fff0ee; color: var(--red); border: 1px solid #f5bfb8; }
+.status.info    { background: #eaf1ff; color: var(--navy); border: 1px solid var(--border); }
+
+/* ── STATS ROW ── */
+.stats-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.stat-chip {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.stat-chip strong {
+  color: var(--navy);
+  font-size: 1rem;
+  display: block;
+  margin-bottom: 1px;
+}
+
+/* ── FILTER BAR ── */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.filter-bar input, .filter-bar select {
+  padding: 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.83rem;
+  outline: none;
+  color: var(--text);
+  background: white;
+}
+
+.filter-bar input { flex: 1; min-width: 160px; }
+.filter-bar input:focus, .filter-bar select:focus { border-color: var(--blue); }
+
+/* ── TABLE ── */
+.table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+thead tr { background: var(--navy); }
+thead th {
+  padding: 10px 13px;
+  text-align: left;
+  color: white;
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: #f7f9ff; }
+
+tbody td {
+  padding: 9px 13px;
+  vertical-align: top;
+  line-height: 1.45;
+}
+
+.tag-code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--navy);
+  background: #eaf0ff;
+  padding: 2px 7px;
+  border-radius: 5px;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.tag-nombre {
+  font-size: 0.74rem;
+  color: var(--muted);
+  display: block;
+  margin-top: 3px;
+  font-style: italic;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.badge-obl { background: var(--orange-bg); color: var(--orange); border: 1px solid #f7c89a; }
+.badge-comp { background: #eef2ff; color: #3a4eb5; border: 1px solid #c0caff; }
+
+.ref-url { color: var(--blue); text-decoration: none; word-break: break-all; }
+.ref-url:hover { text-decoration: underline; }
+
+.no-results { text-align: center; padding: 36px; color: var(--muted); font-size: 0.88rem; }
+
+/* ── MODULE 2: BIROB VIEWER ── */
+.tab-strip {
+  display: flex;
+  gap: 4px;
+  padding: 0;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tab-btn2 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 7px 16px;
+  border: 2px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  border-radius: 6px;
+}
+
+.tab-btn2:hover { border-color: var(--navy); color: var(--navy); }
+.tab-btn2.active { background: var(--navy); border-color: var(--navy); color: white; }
+
+.stats-badge2 {
+  margin-left: auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--muted);
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+}
+
+/* BIROB content panels */
+.bview { display: none; }
+.bview.active { display: block; }
+
+.course-block {
+  margin-bottom: 2.2rem;
+  border-left: 3px solid var(--navy);
+  padding-left: 1.4rem;
+}
+
+.course-header { margin-bottom: 0.8rem; }
+
+.course-code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--navy);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.course-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.bib-section-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.22rem 0.6rem;
+  border-radius: 4px;
+  display: inline-block;
+  margin: 0.7rem 0 0.4rem;
+}
+
+.label-oblig { background: var(--tag-oblig); color: #fff; }
+.label-compl { background: #f0e8da; color: var(--tag-compl); border: 1px solid #d4c4a8; }
+
+.ref-list { list-style: none; }
+
+.ref-item {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e8e2d8;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--text);
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  font-family: 'Libre Baskerville', Georgia, serif;
+}
+
+.ref-item:last-child { border-bottom: none; }
+.ref-dot { margin-top: 0.55rem; width: 5px; height: 5px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+.ref-text { flex: 1; }
+.ref-title { font-style: italic; }
+.ref-link { color: var(--accent2, #8b4513); text-decoration: none; font-family: 'IBM Plex Mono', monospace; font-size: 0.74rem; word-break: break-all; display: inline-block; }
+.ref-link:hover { text-decoration: underline; }
+
+.flat-header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1.4rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 2px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.flat-header h3 { font-size: 1.1rem; font-weight: 700; color: var(--navy); }
+.flat-header .fcount { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--muted); }
+
+.copy-btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  background: white;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 5px;
+  transition: all 0.15s;
+  margin-left: auto;
+}
+.copy-btn:hover { background: var(--navy); color: white; border-color: var(--navy); }
+
+.flat-list { list-style: none; counter-reset: ref-counter; }
+
+.flat-item {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #e8e2d8;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  font-family: 'Libre Baskerville', Georgia, serif;
+  counter-increment: ref-counter;
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.5rem;
+  align-items: start;
+}
+
+.flat-item:last-child { border-bottom: none; }
+
+.flat-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--muted);
+  padding-top: 0.25rem;
+  text-align: right;
+}
+
+/* ── NO-DATA STATE ── */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+}
+
+.empty-state .es-icon { font-size: 3rem; margin-bottom: 12px; display: block; }
+.empty-state h3 { font-size: 1.1rem; font-weight: 600; color: var(--navy); margin-bottom: 8px; }
+.empty-state p { font-size: 0.84rem; line-height: 1.6; }
+
+/* ── PROGRESS ── */
+.progress-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin-top: 10px;
+  overflow: hidden;
+  display: none;
+}
+.progress-bar.visible { display: block; }
+.progress-fill {
+  height: 100%;
+  background: var(--blue);
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.3s;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 700px) {
+  .sidebar { width: 60px; }
+  .sidebar-brand h1, .sidebar-brand p, .nav-btn span:not(.nav-icon), .nav-label, .sidebar-footer { display: none; }
+  .main { padding: 20px 16px 40px; }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo-box">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          <line x1="9" y1="9" x2="15" y2="9"/>
+          <line x1="9" y1="13" x2="13" y2="13"/>
+        </svg>
+      </div>
+      <h1>Sistema Bibliográfico BIROB</h1>
+      <p>CENFOTEC · DCD</p>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-label">Módulos</div>
+
+      <button class="nav-btn active" onclick="showPanel('m0')" id="nb-m0">
+        <span class="nav-icon">📂</span>
+        <span>Importar DOCX</span>
+        <span class="nav-badge" id="badge-m0">—</span>
+      </button>
+
+      <button class="nav-btn" onclick="showPanel('m1')" id="nb-m1">
+        <span class="nav-icon">⚙</span>
+        <span>Bibliograficador</span>
+        <span class="nav-badge" id="badge-m1">—</span>
+      </button>
+
+      <button class="nav-btn" onclick="showPanel('m2')" id="nb-m2">
+        <span class="nav-icon">📖</span>
+        <span>Visor BIROB</span>
+        <span class="nav-badge" id="badge-m2">—</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">v2.0 · 2025</div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ══════════════════════════════════════════════
+         MÓDULO 0: Importar DOCX
+    ══════════════════════════════════════════════ -->
+    <div class="panel active" id="panel-m0">
+      <div class="page-header">
+        <h2>📂 Importar documentos Word</h2>
+        <p>Suba uno o más archivos .docx — se convierten a texto automáticamente y quedan disponibles para el Bibliograficador.</p>
+      </div>
+
+      <!-- Pipeline visual -->
+      <div class="pipeline">
+        <div class="pipe-step" id="ps0">
+          <span class="ps-num">Paso 1</span>
+          <span class="ps-label">Subir DOCX</span>
+          <span class="ps-status" id="ps0-st">En espera…</span>
+        </div>
+        <div class="pipe-step" id="ps1">
+          <span class="ps-num">Paso 2</span>
+          <span class="ps-label">Conversión a TXT</span>
+          <span class="ps-status" id="ps1-st">En espera…</span>
+        </div>
+        <div class="pipe-step" id="ps2">
+          <span class="ps-num">Paso 3</span>
+          <span class="ps-label">Listo para procesar</span>
+          <span class="ps-status" id="ps2-st">En espera…</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Seleccionar archivos .docx</div>
+        <div class="upload-zone" id="dz-docx">
+          <input type="file" id="fi-docx" accept=".docx" multiple />
+          <span class="u-icon">📄</span>
+          <div class="u-label">Haz clic o arrastra los archivos aquí</div>
+          <div class="u-sub">Acepta múltiples archivos .docx simultáneamente</div>
+        </div>
+
+        <div id="file-list-m0" class="file-list"></div>
+        <div class="progress-bar" id="pb-m0"><div class="progress-fill" id="pf-m0"></div></div>
+
+        <div class="actions">
+          <button class="btn btn-primary" id="btn-convertir" onclick="convertirDocx()" disabled>
+            ⚙ Convertir a TXT
+          </button>
+          <button class="btn btn-outline" onclick="irABibliograficador()" id="btn-ir-m1" style="display:none">
+            → Ir al Bibliograficador
+          </button>
+        </div>
+        <div class="status" id="st-m0"></div>
+      </div>
+
+      <div class="card" id="txt-preview-card" style="display:none">
+        <div class="card-title">Vista previa del texto extraído</div>
+        <div id="txt-preview" style="font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--muted);background:var(--bg);border-radius:8px;padding:14px;max-height:300px;overflow-y:auto;line-height:1.6;white-space:pre-wrap;"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         MÓDULO 1: Bibliograficador
+    ══════════════════════════════════════════════ -->
+    <div class="panel" id="panel-m1">
+      <div class="page-header">
+        <h2>⚙ Bibliograficador</h2>
+        <p>Extrae referencias bibliográficas (con código y nombre del curso) y genera un CSV listo para el Visor BIROB.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">1. Fuente de texto</div>
+
+        <!-- Tab toggle: desde conversión o subida manual de TXT -->
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <button class="tab-btn2 active" id="src-tab-auto" onclick="setSrcTab('auto')">Usar DOCX convertidos</button>
+          <button class="tab-btn2" id="src-tab-manual" onclick="setSrcTab('manual')">Subir TXT manual</button>
+        </div>
+
+        <!-- Fuente automática -->
+        <div id="src-auto">
+          <div id="auto-files-list">
+            <div class="empty-state" style="padding:24px 0;">
+              <span class="es-icon" style="font-size:1.5rem">ℹ</span>
+              <p>Aún no hay archivos convertidos. Importa un DOCX en el primer módulo.</p>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" id="btn-procesar-auto" onclick="procesarAuto()" disabled>
+              ⚙ Procesar texto
+            </button>
+          </div>
+        </div>
+
+        <!-- Fuente manual TXT -->
+        <div id="src-manual" style="display:none">
+          <div class="upload-zone" id="dz-txt">
+            <input type="file" id="fi-txt" accept=".txt" multiple />
+            <span class="u-icon">📄</span>
+            <div class="u-label">Haz clic o arrastra archivos .txt aquí</div>
+            <div class="u-sub">Archivos exportados desde Word (Guardar como → Texto sin formato)</div>
+          </div>
+          <div id="file-list-m1" class="file-list" style="margin-top:10px;"></div>
+          <div class="actions">
+            <button class="btn btn-primary" id="btn-procesar-manual" onclick="procesarManual()" disabled>
+              ⚙ Procesar archivo
+            </button>
+          </div>
+        </div>
+
+        <div class="status" id="st-m1"></div>
+      </div>
+
+      <!-- Resultados -->
+      <div class="card" id="m1-results" style="display:none">
+        <div class="card-title">2. Referencias extraídas</div>
+
+        <div class="stats-row" id="m1-stats"></div>
+
+        <div class="filter-bar">
+          <input type="text" id="m1-search" placeholder="Buscar en referencias…" oninput="m1Filtrar()" />
+          <select id="m1-tipo" onchange="m1Filtrar()">
+            <option value="">Todos los tipos</option>
+            <option value="Obligatoria">Obligatoria</option>
+            <option value="Complementaria">Complementaria</option>
+          </select>
+          <select id="m1-codigo" onchange="m1Filtrar()">
+            <option value="">Todos los cursos</option>
+          </select>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:140px">Código / Nombre</th>
+                <th style="width:130px">Tipo</th>
+                <th>Referencia</th>
+              </tr>
+            </thead>
+            <tbody id="m1-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="actions" style="margin-top:16px;">
+          <button class="btn btn-green" onclick="descargarCSV()">⬇ Descargar CSV</button>
+          <button class="btn btn-outline" onclick="enviarAVisor()">→ Abrir en Visor BIROB</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         MÓDULO 2: Visor BIROB
+    ══════════════════════════════════════════════ -->
+    <div class="panel" id="panel-m2">
+      <div class="page-header">
+        <h2>📖 Visor BIROB</h2>
+        <p>Visualiza, navega y copia las referencias bibliográficas organizadas por curso o tipo.</p>
+      </div>
+
+      <!-- Estado vacío -->
+      <div id="m2-empty">
+        <div class="card">
+          <div class="card-title">Cargar datos</div>
+          <div style="display:flex;gap:8px;margin-bottom:16px;">
+            <button class="tab-btn2 active" id="m2-tab-pipeline" onclick="setM2Tab('pipeline')">Desde Bibliograficador</button>
+            <button class="tab-btn2" id="m2-tab-csv" onclick="setM2Tab('csv')">Subir CSV</button>
+          </div>
+
+          <div id="m2-pipeline-src">
+            <div class="empty-state" style="padding:24px 0;">
+              <span class="es-icon" style="font-size:1.5rem">ℹ</span>
+              <p>Procesa referencias en el Bibliograficador y usa el botón <strong>"Abrir en Visor BIROB"</strong> para cargar los datos aquí automáticamente.</p>
+            </div>
+          </div>
+
+          <div id="m2-csv-src" style="display:none">
+            <div class="upload-zone" id="dz-csv">
+              <input type="file" id="fi-csv" accept=".csv" />
+              <span class="u-icon">📊</span>
+              <div class="u-label">Cargar archivo CSV</div>
+              <div class="u-sub">Columnas requeridas: Código · Nombre · Tipo · Referencia</div>
+            </div>
+            <div class="status" id="st-m2-csv" style="margin-top:10px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contenido cargado -->
+      <div id="m2-content" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+          <div class="tab-strip" style="margin-bottom:0;flex:1;">
+            <button class="tab-btn2 active" data-bview="cursos" onclick="showBView('cursos')">Por curso</button>
+            <button class="tab-btn2" data-bview="obligatorios" onclick="showBView('obligatorios')">Obligatorios</button>
+            <button class="tab-btn2" data-bview="complementarios" onclick="showBView('complementarios')">Complementarios</button>
+            <span class="stats-badge2" id="m2-stats-badge"></span>
+          </div>
+          <button class="btn btn-outline" style="font-size:0.78rem;padding:7px 14px;" onclick="resetM2()">✕ Cambiar datos</button>
+        </div>
+
+        <div class="card" style="min-height:300px;">
+          <div class="bview active" id="bview-cursos"></div>
+          <div class="bview" id="bview-obligatorios"></div>
+          <div class="bview" id="bview-complementarios"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// GLOBAL STATE
+// ══════════════════════════════════════════════
+const state = {
+  convertedTexts: [],   // [{name, text}]  from DOCX conversion
+  m1Data: [],           // [{codigo, nombre, tipo, referencia}]
+  m1Filtered: [],
+  m2Data: [],           // [{Código, Nombre, Tipo, Referencia}]
+};
+
+// ══════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  document.getElementById('nb-' + id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════
+function setStatus(elId, msg, tipo) {
+  const el = document.getElementById(elId);
+  el.textContent = msg;
+  el.className = 'status visible ' + tipo;
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function updateBadge(id, text, ready) {
+  const el = document.getElementById('badge-' + id);
+  el.textContent = text;
+  el.className = 'nav-badge' + (ready ? ' ready' : '');
+}
+
+// ══════════════════════════════════════════════
+// MÓDULO 0: DOCX → TXT via mammoth
+// ══════════════════════════════════════════════
+const fiDocx = document.getElementById('fi-docx');
+const dzDocx = document.getElementById('dz-docx');
+
+let pendingDocxFiles = [];
+
+fiDocx.addEventListener('change', () => handleDocxFiles(Array.from(fiDocx.files)));
+dzDocx.addEventListener('dragover', e => { e.preventDefault(); dzDocx.classList.add('drag-over'); });
+dzDocx.addEventListener('dragleave', () => dzDocx.classList.remove('drag-over'));
+dzDocx.addEventListener('drop', e => {
+  e.preventDefault();
+  dzDocx.classList.remove('drag-over');
+  const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.docx'));
+  handleDocxFiles(files);
+});
+
+function handleDocxFiles(files) {
+  if (!files.length) return;
+  pendingDocxFiles = files;
+
+  const listEl = document.getElementById('file-list-m0');
+  listEl.innerHTML = '';
+  files.forEach(f => {
+    listEl.innerHTML += `<div class="file-chip" id="chip-${sanitizeId(f.name)}">
+      <span>📄</span>
+      <span class="fc-name">${escHtml(f.name)}</span>
+      <span style="font-size:0.72rem;color:var(--muted)">pendiente</span>
+    </div>`;
+  });
+
+  document.getElementById('btn-convertir').disabled = false;
+  document.getElementById('ps0-st').textContent = files.length + ' archivo(s) seleccionado(s)';
+  document.getElementById('ps0').className = 'pipe-step done';
+  document.getElementById('st-m0').className = 'status';
+}
+
+function sanitizeId(s) {
+  return s.replace(/[^a-zA-Z0-9]/g, '_');
+}
+
+async function convertirDocx() {
+  if (!pendingDocxFiles.length) return;
+  const btn = document.getElementById('btn-convertir');
+  btn.disabled = true;
+  btn.textContent = '⏳ Convirtiendo…';
+
+  const pb = document.getElementById('pb-m0');
+  const pf = document.getElementById('pf-m0');
+  pb.classList.add('visible');
+
+  document.getElementById('ps1').className = 'pipe-step active';
+  document.getElementById('ps1-st').textContent = 'Procesando…';
+
+  state.convertedTexts = [];
+  let ok = 0;
+
+  for (let i = 0; i < pendingDocxFiles.length; i++) {
+    const file = pendingDocxFiles[i];
+    pf.style.width = Math.round(((i + 0.5) / pendingDocxFiles.length) * 100) + '%';
+
+    const chipId = 'chip-' + sanitizeId(file.name);
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      const text = result.value;
+      state.convertedTexts.push({ name: file.name, text });
+      ok++;
+
+      const chip = document.getElementById(chipId);
+      if (chip) {
+        chip.className = 'file-chip converted';
+        chip.querySelector('span:last-child').textContent = '✓ convertido';
+      }
+    } catch(err) {
+      const chip = document.getElementById(chipId);
+      if (chip) {
+        chip.className = 'file-chip error-chip';
+        chip.querySelector('span:last-child').textContent = '✗ error';
+      }
+    }
+  }
+
+  pf.style.width = '100%';
+  setTimeout(() => { pb.classList.remove('visible'); pf.style.width = '0%'; }, 800);
+
+  if (ok > 0) {
+    document.getElementById('ps1').className = 'pipe-step done';
+    document.getElementById('ps1-st').textContent = ok + ' convertido(s)';
+    document.getElementById('ps2').className = 'pipe-step done';
+    document.getElementById('ps2-st').textContent = 'Listos para el Bibliograficador';
+
+    setStatus('st-m0', `✓ ${ok} de ${pendingDocxFiles.length} archivo(s) convertidos correctamente.`, 'success');
+
+    document.getElementById('btn-ir-m1').style.display = '';
+    updateBadge('m0', ok + ' docs', true);
+
+    // Preview first file
+    const previewCard = document.getElementById('txt-preview-card');
+    const previewEl = document.getElementById('txt-preview');
+    previewCard.style.display = '';
+    const preview = state.convertedTexts[0].text.substring(0, 3000);
+    previewEl.textContent = preview + (state.convertedTexts[0].text.length > 3000 ? '\n\n[… continúa …]' : '');
+
+    // Update auto list in module 1
+    renderAutoFileList();
+  } else {
+    setStatus('st-m0', '✗ No se pudo convertir ningún archivo. Verifique que sean .docx válidos.', 'error');
+  }
+
+  btn.textContent = '⚙ Convertir a TXT';
+  btn.disabled = false;
+}
+
+function irABibliograficador() {
+  showPanel('m1');
+  setSrcTab('auto');
+}
+
+// ══════════════════════════════════════════════
+// MÓDULO 1: BIBLIOGRAFICADOR
+// ══════════════════════════════════════════════
+
+// Src tab toggle
+function setSrcTab(tab) {
+  document.getElementById('src-auto').style.display   = tab === 'auto'   ? '' : 'none';
+  document.getElementById('src-manual').style.display = tab === 'manual' ? '' : 'none';
+  document.getElementById('src-tab-auto').className   = 'tab-btn2' + (tab === 'auto'   ? ' active' : '');
+  document.getElementById('src-tab-manual').className = 'tab-btn2' + (tab === 'manual' ? ' active' : '');
+}
+
+function renderAutoFileList() {
+  const el = document.getElementById('auto-files-list');
+  if (!state.convertedTexts.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:24px 0;"><span class="es-icon" style="font-size:1.5rem">ℹ</span><p>Aún no hay archivos convertidos.</p></div>`;
+    document.getElementById('btn-procesar-auto').disabled = true;
+    return;
+  }
+  el.innerHTML = state.convertedTexts.map(f =>
+    `<div class="file-chip converted"><span>✓</span><span class="fc-name">${escHtml(f.name)}</span><span style="font-size:0.72rem;color:var(--green)">${(f.text.length/1000).toFixed(1)}k chars</span></div>`
+  ).join('');
+  document.getElementById('btn-procesar-auto').disabled = false;
+}
+
+function procesarAuto() {
+  if (!state.convertedTexts.length) return;
+  const combined = state.convertedTexts.map(f => f.text).join('\n\n');
+  procesarTexto(combined);
+}
+
+// TXT manual upload
+let pendingTxtFiles = [];
+
+const fiTxt = document.getElementById('fi-txt');
+const dzTxt = document.getElementById('dz-txt');
+
+fiTxt.addEventListener('change', () => handleTxtFiles(Array.from(fiTxt.files)));
+dzTxt.addEventListener('dragover', e => { e.preventDefault(); dzTxt.classList.add('drag-over'); });
+dzTxt.addEventListener('dragleave', () => dzTxt.classList.remove('drag-over'));
+dzTxt.addEventListener('drop', e => {
+  e.preventDefault();
+  dzTxt.classList.remove('drag-over');
+  const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.txt'));
+  handleTxtFiles(files);
+});
+
+function handleTxtFiles(files) {
+  pendingTxtFiles = files;
+  const listEl = document.getElementById('file-list-m1');
+  listEl.innerHTML = files.map(f =>
+    `<div class="file-chip"><span>📄</span><span class="fc-name">${escHtml(f.name)}</span></div>`
+  ).join('');
+  document.getElementById('btn-procesar-manual').disabled = files.length === 0;
+}
+
+function procesarManual() {
+  if (!pendingTxtFiles.length) return;
+  const readers = pendingTxtFiles.map(f => new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = rej;
+    r.readAsText(f, 'UTF-8');
+  }));
+  Promise.all(readers).then(texts => {
+    procesarTexto(texts.join('\n\n'));
+  }).catch(() => {
+    setStatus('st-m1', '✗ Error al leer los archivos.', 'error');
+  });
+}
+
+// ── Core parser ──────────────────────────────
+function parsearBibliografia(texto) {
+  texto = texto.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lineas = texto.split('\n');
+
+  const resultados = [];
+  let codigoActual = 'SIN_CODIGO';
+  let nombreActual = '';
+  let seccion = '';
+
+  // Matches: FUN-05, ROB-04, SOFT-01, IND-22, FUN-05-C1, etc.
+  const reCodigo = /^[\t\s]*([A-Z]{2,6}-\d{2,3}(?:-[A-Z0-9]{1,3})?)[\t\s]*$/;
+
+  // Matches bibliography entries: starts with uppercase, contains (YYYY)
+  const reEntrada = /^[A-ZÁÉÍÓÚÜÑ].+\(\d{4}\).+/;
+
+  for (let i = 0; i < lineas.length; i++) {
+    const raw = lineas[i];
+    const linea = raw.trim();
+    if (linea === '') continue;
+
+    // Course code detection
+    const matchCodigo = reCodigo.exec(raw);
+    if (matchCodigo) {
+      codigoActual = matchCodigo[1];
+      // Try to grab course name from next non-empty line that doesn't look like a header
+      nombreActual = '';
+      for (let j = i + 1; j < Math.min(i + 5, lineas.length); j++) {
+        const cand = lineas[j].trim();
+        if (!cand) continue;
+        // Skip if it looks like a section header or another code
+        if (/^bibliograf[ií]a/i.test(cand)) break;
+        if (reCodigo.test(lineas[j])) break;
+        if (/^(programa|curso|código|crédito|horas|requisito|correquisito|descripción|objetivos|módulo|contenido|estrategia|evaluación|distribución|cronograma)/i.test(cand)) break;
+        // Accept as name if it's reasonably short and title-like
+        if (cand.length > 3 && cand.length < 120) {
+          nombreActual = cand;
+        }
+        break;
+      }
+      seccion = '';
+      continue;
+    }
+
+    // Section headers
+    if (/^bibliograf[ií]a\s+obligatoria/i.test(linea)) { seccion = 'Obligatoria'; continue; }
+    if (/^bibliograf[ií]a\s+complementaria/i.test(linea)) { seccion = 'Complementaria'; continue; }
+
+    // Exit sections on structural markers
+    if (/^[\*\d\s]*cronograma/i.test(linea) || /^\d+\.\s*(Cronograma|Distribución|Metodología|Evaluación|Recursos)/i.test(linea)) {
+      seccion = ''; continue;
+    }
+
+    // Capture entries
+    if (seccion !== '' && reEntrada.test(linea)) {
+      let ref = linea.replace(/^\d+[\.\)]\s+/, '').trim();
+      resultados.push({
+        codigo: codigoActual,
+        nombre: nombreActual,
+        tipo: seccion,
+        referencia: ref
+      });
+    }
+  }
+  return resultados;
+}
+
+function procesarTexto(texto) {
+  setStatus('st-m1', 'Procesando…', 'info');
+  try {
+    const datos = parsearBibliografia(texto);
+    state.m1Data = datos;
+
+    if (!datos.length) {
+      setStatus('st-m1', '✗ No se encontraron referencias. Verifique el formato del texto.', 'error');
+      return;
+    }
+
+    const cursos = new Set(datos.map(d => d.codigo)).size;
+    setStatus('st-m1', `✓ ${datos.length} referencias extraídas de ${cursos} cursos.`, 'success');
+    updateBadge('m1', datos.length + ' refs', true);
+    mostrarResultadosM1();
+  } catch(err) {
+    setStatus('st-m1', '✗ Error: ' + err.message, 'error');
+  }
+}
+
+function mostrarResultadosM1() {
+  const resEl = document.getElementById('m1-results');
+  resEl.style.display = '';
+
+  const obl  = state.m1Data.filter(d => d.tipo === 'Obligatoria').length;
+  const comp = state.m1Data.filter(d => d.tipo === 'Complementaria').length;
+  const cur  = new Set(state.m1Data.map(d => d.codigo)).size;
+
+  document.getElementById('m1-stats').innerHTML = `
+    <div class="stat-chip"><strong>${state.m1Data.length}</strong>Total</div>
+    <div class="stat-chip"><strong>${obl}</strong>Obligatorias</div>
+    <div class="stat-chip"><strong>${comp}</strong>Complementarias</div>
+    <div class="stat-chip"><strong>${cur}</strong>Cursos</div>
+  `;
+
+  // Populate course filter
+  const codigos = [...new Set(state.m1Data.map(d => d.codigo))].sort();
+  const sel = document.getElementById('m1-codigo');
+  sel.innerHTML = '<option value="">Todos los cursos</option>';
+  codigos.forEach(c => {
+    const row = state.m1Data.find(d => d.codigo === c);
+    const label = row && row.nombre ? `${c} — ${row.nombre}` : c;
+    sel.innerHTML += `<option value="${escHtml(c)}">${escHtml(label)}</option>`;
+  });
+
+  state.m1Filtered = [...state.m1Data];
+  renderTablaM1(state.m1Filtered);
+  resEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function m1Filtrar() {
+  const texto  = document.getElementById('m1-search').value.toLowerCase();
+  const tipo   = document.getElementById('m1-tipo').value;
+  const codigo = document.getElementById('m1-codigo').value;
+
+  state.m1Filtered = state.m1Data.filter(d => {
+    const mt = !texto  || d.referencia.toLowerCase().includes(texto) || d.codigo.toLowerCase().includes(texto) || d.nombre.toLowerCase().includes(texto);
+    const mti = !tipo  || d.tipo === tipo;
+    const mc = !codigo || d.codigo === codigo;
+    return mt && mti && mc;
+  });
+  renderTablaM1(state.m1Filtered);
+}
+
+function renderTablaM1(datos) {
+  const tbody = document.getElementById('m1-tbody');
+  if (!datos.length) {
+    tbody.innerHTML = '<tr><td colspan="3" class="no-results">No hay referencias con esos filtros.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = datos.map(d => `
+    <tr>
+      <td>
+        <span class="tag-code">${escHtml(d.codigo)}</span>
+        ${d.nombre ? `<span class="tag-nombre">${escHtml(d.nombre)}</span>` : ''}
+      </td>
+      <td><span class="badge ${d.tipo === 'Obligatoria' ? 'badge-obl' : 'badge-comp'}">${escHtml(d.tipo)}</span></td>
+      <td>${formatRefSimple(escHtml(d.referencia))}</td>
+    </tr>
+  `).join('');
+}
+
+function formatRefSimple(ref) {
+  return ref.replace(/(https?:\/\/[^\s&]+)/g, '<a class="ref-url" href="$1" target="_blank">$1</a>');
+}
+
+function descargarCSV() {
+  let csv = '\uFEFFCódigo,Nombre,Tipo,Referencia\n';
+  state.m1Data.forEach(d => {
+    const nombre = (d.nombre || '').replace(/"/g, '""');
+    const ref = d.referencia.replace(/"/g, '""');
+    csv += `${d.codigo},"${nombre}",${d.tipo},"${ref}"\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Bibliografia_BIROB_Tomo_II.csv';
+  a.click();
+}
+
+function enviarAVisor() {
+  // Convert m1Data format to m2Data format
+  state.m2Data = state.m1Data.map(d => ({
+    'Código': d.codigo,
+    'Nombre': d.nombre || '',
+    'Tipo': d.tipo,
+    'Referencia': d.referencia
+  }));
+  renderM2(state.m2Data);
+  updateBadge('m2', state.m2Data.length + ' refs', true);
+  showPanel('m2');
+}
+
+// ══════════════════════════════════════════════
+// MÓDULO 2: VISOR BIROB
+// ══════════════════════════════════════════════
+
+function setM2Tab(tab) {
+  document.getElementById('m2-pipeline-src').style.display = tab === 'pipeline' ? '' : 'none';
+  document.getElementById('m2-csv-src').style.display      = tab === 'csv'      ? '' : 'none';
+  document.getElementById('m2-tab-pipeline').className = 'tab-btn2' + (tab === 'pipeline' ? ' active' : '');
+  document.getElementById('m2-tab-csv').className      = 'tab-btn2' + (tab === 'csv'      ? ' active' : '');
+}
+
+// CSV upload for module 2
+const fiCsv = document.getElementById('fi-csv');
+const dzCsv = document.getElementById('dz-csv');
+
+fiCsv.addEventListener('change', () => { if (fiCsv.files[0]) loadM2CSV(fiCsv.files[0]); });
+dzCsv.addEventListener('dragover', e => { e.preventDefault(); dzCsv.classList.add('drag-over'); });
+dzCsv.addEventListener('dragleave', () => dzCsv.classList.remove('drag-over'));
+dzCsv.addEventListener('drop', e => {
+  e.preventDefault();
+  dzCsv.classList.remove('drag-over');
+  const f = Array.from(e.dataTransfer.files).find(f => f.name.endsWith('.csv'));
+  if (f) loadM2CSV(f);
+});
+
+function loadM2CSV(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = parseCSV(e.target.result);
+      const required = ['Código', 'Nombre', 'Tipo', 'Referencia'];
+      const cols = data.length ? Object.keys(data[0]) : [];
+      const missing = required.filter(c => !cols.includes(c));
+      if (missing.length) {
+        setStatus('st-m2-csv', '✗ Columnas faltantes: ' + missing.join(', '), 'error');
+        return;
+      }
+      state.m2Data = data;
+      renderM2(data);
+      updateBadge('m2', data.length + ' refs', true);
+    } catch(err) {
+      setStatus('st-m2-csv', '✗ Error al procesar CSV: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCSV(text) {
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  const result = [];
+  let header = null;
+  for (const line of lines) {
+    const row = parseCSVRow(line);
+    if (!row || row.every(c => c.trim() === '')) continue;
+    if (!header) { header = row.map(h => h.trim()); continue; }
+    const obj = {};
+    header.forEach((h, i) => { obj[h] = (row[i] || '').trim(); });
+    result.push(obj);
+  }
+  return result;
+}
+
+function parseCSVRow(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
+    else cur += c;
+  }
+  result.push(cur);
+  return result;
+}
+
+function renderM2(data) {
+  buildBViewCursos(data);
+  buildBViewFlat(data, 'Obligatoria', 'bview-obligatorios', 'Bibliografía Obligatoria');
+  buildBViewFlat(data, 'Complementaria', 'bview-complementarios', 'Bibliografía Complementaria');
+
+  const cursos = new Set(data.map(r => r['Código'])).size;
+  const oblig  = new Set(data.filter(r => r['Tipo'] === 'Obligatoria').map(r => extractURL(r['Referencia']) || r['Referencia'])).size;
+  const compl  = new Set(data.filter(r => r['Tipo'] === 'Complementaria').map(r => extractURL(r['Referencia']) || r['Referencia'])).size;
+  document.getElementById('m2-stats-badge').textContent = `${cursos} cursos · ${oblig} oblig. · ${compl} compl.`;
+
+  document.getElementById('m2-empty').style.display   = 'none';
+  document.getElementById('m2-content').style.display = '';
+  showBView('cursos');
+}
+
+function buildBViewCursos(data) {
+  const order = [], map = {};
+  for (const row of data) {
+    const key = row['Código'];
+    if (!map[key]) {
+      map[key] = { codigo: row['Código'], nombre: row['Nombre'] || '', oblig: [], compl: [] };
+      order.push(key);
+    }
+    if (row['Tipo'] === 'Obligatoria') map[key].oblig.push(row['Referencia']);
+    else map[key].compl.push(row['Referencia']);
+  }
+
+  let html = `<div class="flat-header">
+    <h3>Todos los cursos</h3>
+    <span class="fcount">${order.length} cursos</span>
+    <button class="copy-btn" onclick="copyRich('courses-content', this)">Copiar con formato</button>
+  </div><div id="courses-content">`;
+
+  for (const key of order) {
+    const c = map[key];
+    html += `<div class="course-block">
+      <div class="course-header">
+        <span class="course-code">${escHtml(c.codigo)}</span>
+        <span class="course-name">${escHtml(c.nombre)}</span>
+      </div>`;
+    if (c.oblig.length) {
+      html += `<span class="bib-section-label label-oblig">Bibliografía obligatoria</span><ul class="ref-list">`;
+      c.oblig.forEach(r => { html += `<li class="ref-item"><div class="ref-dot"></div>${formatRefBIROB(r)}</li>`; });
+      html += `</ul>`;
+    }
+    if (c.compl.length) {
+      html += `<span class="bib-section-label label-compl">Bibliografía complementaria</span><ul class="ref-list">`;
+      c.compl.forEach(r => { html += `<li class="ref-item"><div class="ref-dot"></div>${formatRefBIROB(r)}</li>`; });
+      html += `</ul>`;
+    }
+    html += `</div>`;
+  }
+  html += `</div>`;
+  document.getElementById('bview-cursos').innerHTML = html;
+}
+
+function buildBViewFlat(data, tipo, elId, label) {
+  const filtered = data.filter(r => r['Tipo'] === tipo);
+  const seen = new Set(), unique = [];
+  for (const row of filtered) {
+    const url = extractURL(row['Referencia']);
+    const key = url || row['Referencia'].trim().toLowerCase();
+    if (!seen.has(key)) { seen.add(key); unique.push(row['Referencia']); }
+  }
+  unique.sort((a, b) => a.localeCompare(b, 'es'));
+
+  const copyId = 'copy-' + tipo;
+  let html = `<div class="flat-header">
+    <h3>${escHtml(label)}</h3>
+    <span class="fcount">${unique.length} referencias</span>
+    <button class="copy-btn" onclick="copyRich('${copyId}', this)">Copiar con formato</button>
+  </div>
+  <ol class="flat-list" id="${copyId}">`;
+
+  unique.forEach((r, i) => {
+    html += `<li class="flat-item"><span class="flat-num">${i+1}.</span>${formatRefBIROB(r)}</li>`;
+  });
+  html += `</ol>`;
+  document.getElementById(elId).innerHTML = html;
+}
+
+// ── Reference formatting (BIROB style) ─────
+function extractURL(ref) {
+  const m = ref.match(/https?:\/\/\S+/);
+  return m ? m[0].replace(/[).,]+$/, '') : null;
+}
+
+function formatRefBIROB(ref) {
+  ref = ref.replace(/\s*\(Libro clásico\)\s*$/i, '');
+  const url = extractURL(ref);
+  const textPart = url ? ref.substring(0, ref.indexOf(url)).trim() : ref.trim();
+  const clean = textPart.replace(/\s+$/, '').replace(/\.+$/, '.');
+
+  const yearMatch = clean.match(/\(\d{4}[a-z]?\)|\(s\.f\.\)|\(n\.d\.\)/i);
+  if (!yearMatch) {
+    return `<span class="ref-text">${escHtml(clean)}${url ? ' <a class="ref-link" href="' + escHtml(url) + '" target="_blank">' + escHtml(url) + '</a>' : ''}</span>`;
+  }
+
+  const yearIdx = clean.indexOf(yearMatch[0]);
+  const beforeYear = clean.substring(0, yearIdx + yearMatch[0].length);
+  const afterYear  = clean.substring(yearIdx + yearMatch[0].length).replace(/^[.\s]+/, '');
+  const { italic, rest } = extractTitlePart(afterYear);
+
+  let html = `<span class="ref-text">${escHtml(beforeYear)}. <em class="ref-title">${escHtml(italic)}</em>${escHtml(rest)}`;
+  if (url) html += ` <a class="ref-link" href="${escHtml(url)}" target="_blank">${escHtml(url)}</a>`;
+  html += `</span>`;
+  return html;
+}
+
+function extractTitlePart(text) {
+  const edMatch = text.match(/^(.*?\(\d+[^)]*ed[^)]*\))(\.\s+[\s\S]*)?$/i);
+  if (edMatch) {
+    const italic  = edMatch[1].trim();
+    const rawRest = (edMatch[2] || '').trim().replace(/^[.\s]+/, '');
+    return { italic, rest: rawRest ? `. ${rawRest}` : '.' };
+  }
+  const pubMatch = text.match(/^(.*)\.\s+([A-ZÁÉÍÓÚ][\s\S]*)$/);
+  if (pubMatch) return { italic: pubMatch[1].trim(), rest: `. ${pubMatch[2]}` };
+  return { italic: text.replace(/\.$/, '').trim(), rest: '.' };
+}
+
+function showBView(name) {
+  document.querySelectorAll('.bview').forEach(v => v.classList.remove('active'));
+  document.getElementById('bview-' + name).classList.add('active');
+  document.querySelectorAll('.tab-btn2[data-bview]').forEach(b => {
+    b.classList.toggle('active', b.dataset.bview === name);
+  });
+}
+
+function resetM2() {
+  state.m2Data = [];
+  document.getElementById('m2-content').style.display = 'none';
+  document.getElementById('m2-empty').style.display   = '';
+  document.getElementById('fi-csv').value = '';
+  ['cursos','obligatorios','complementarios'].forEach(v => {
+    document.getElementById('bview-' + v).innerHTML = '';
+    document.getElementById('bview-' + v).classList.remove('active');
+  });
+  updateBadge('m2', '—', false);
+}
+
+// ── Rich copy ───────────────────────────────
+function copyRich(containerId, btnEl) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  let htmlParts = [], textParts = [];
+
+  const courseBlocks = container.querySelectorAll('.course-block');
+  const flatItems    = container.querySelectorAll('.flat-item');
+
+  if (courseBlocks.length > 0) {
+    courseBlocks.forEach(block => {
+      const code = block.querySelector('.course-code')?.textContent.trim() || '';
+      const name = block.querySelector('.course-name')?.textContent.trim() || '';
+      htmlParts.push(`<p><strong>${escHtml(code)} ${escHtml(name)}</strong></p>`);
+      textParts.push(`${code} ${name}`);
+      block.querySelectorAll('.bib-section-label').forEach(lbl => {
+        const lt = lbl.textContent.trim();
+        htmlParts.push(`<p><strong>${escHtml(lt)}</strong></p>`);
+        textParts.push(`\n${lt}`);
+        const sibl = lbl.nextElementSibling;
+        if (sibl && sibl.classList.contains('ref-list')) {
+          sibl.querySelectorAll('.ref-item').forEach(item => {
+            const rs = item.querySelector('.ref-text');
+            if (rs) {
+              htmlParts.push(`<p>${refSpanToHtml(rs)}</p>`);
+              textParts.push(rs.textContent.trim());
+            }
+          });
+        }
+      });
+      htmlParts.push(`<p>&nbsp;</p>`);
+      textParts.push('');
+    });
+  } else if (flatItems.length > 0) {
+    flatItems.forEach(item => {
+      const rs = item.querySelector('.ref-text');
+      if (rs) { htmlParts.push(`<p>${refSpanToHtml(rs)}</p>`); textParts.push(rs.textContent.trim()); }
+    });
+  }
+
+  const htmlStr = `<html><body>${htmlParts.join('')}</body></html>`;
+  const textStr = textParts.join('\n');
+
+  if (window.ClipboardItem) {
+    const hb = new Blob([htmlStr], { type: 'text/html' });
+    const tb = new Blob([textStr], { type: 'text/plain' });
+    navigator.clipboard.write([new ClipboardItem({ 'text/html': hb, 'text/plain': tb })])
+      .then(() => flashBtn(btnEl, '✓ Copiado con formato'))
+      .catch(() => navigator.clipboard.writeText(textStr).then(() => flashBtn(btnEl, '✓ Copiado (solo texto)')));
+  } else {
+    navigator.clipboard.writeText(textStr).then(() => flashBtn(btnEl, '✓ Copiado'));
+  }
+}
+
+function refSpanToHtml(span) {
+  let html = '';
+  span.childNodes.forEach(n => {
+    if (n.nodeType === Node.TEXT_NODE) html += escHtml(n.textContent);
+    else if (n.nodeName === 'EM')     html += `<em>${escHtml(n.textContent)}</em>`;
+    else if (n.nodeName === 'STRONG') html += `<strong>${escHtml(n.textContent)}</strong>`;
+    else if (n.nodeName === 'A')      html += `<a href="${escHtml(n.getAttribute('href') || '')}">${escHtml(n.textContent)}</a>`;
+    else html += escHtml(n.textContent);
+  });
+  return html;
+}
+
+function flashBtn(btn, msg) {
+  if (!btn) return;
+  const orig = btn.textContent;
+  btn.textContent = msg;
+  btn.style.cssText = 'background:var(--navy);color:#fff;border-color:var(--navy);';
+  setTimeout(() => { btn.textContent = orig; btn.style.cssText = ''; }, 2500);
+}
+
+// Init
+renderAutoFileList();
+</script>
+</body>
+</html>
